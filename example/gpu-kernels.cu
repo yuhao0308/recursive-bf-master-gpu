@@ -24,7 +24,7 @@ void invokeNaiveKernel(
     float *range_table_d;
 
     // range table for look up
-    float \[QX_DEF_CHAR_MAX + 1];
+    float range_table[QX_DEF_CHAR_MAX + 1];
     float inv_sigma_range = 1.0f / (sigma_range * QX_DEF_CHAR_MAX);
     for (int i = 0; i <= QX_DEF_CHAR_MAX; i++)
         range_table[i] = static_cast<float>(exp(-i * inv_sigma_range));
@@ -95,80 +95,87 @@ void invokeNaiveKernel(
         img_d, img_tmp_d, map_factor_a_d, range_table_d,
         width, height, channel, sigma_spatial);
     // copy back img_tmp and map_factor
-    cudaMemCpy(img_tmp_h, img_tmp_d, height * width * channels * sizeof(float), cudaMemcpyDeviceToHost);
-    cudaMemCpy(map_factor_a_h, map_factor_a_d, height * width * sizeof(float), cudaMemcpyDeviceToHost);
+    cudaMemcpy(img_tmp_h, img_tmp_d, height * width * channels * sizeof(float), cudaMemcpyDeviceToHost);
+    cudaMemcpy(map_factor_a_h, map_factor_a_d, height * width * sizeof(float), cudaMemcpyDeviceToHost);
     // cudaFree(img_d);
     // cudaFree(map_factor_a_d);
     // now we have img_tmp and map_factor_a on host, proceed to do the rest
 
-    // float *img_out_f_h;
-    float *img_out_f_d;
+    // // float *img_out_f_h;
+    // float *img_out_f_d;
 
-    // img_out_f_h = new float[width * height * channel];
-    cudaMalloc((void **)&img_out_f_d, height * width * channel * sizeof(float));
-    if (!img_out_f_d)
-    {
-        printf("Naive Kernel: Cuda malloc fail on img_out_f_d");
-        delete[] img_out_f_d;
-        delete[] img_tmp_h;
-        delete[] map_factor_a_h;
-        cudaFree(img_out_f_d);
-        cudaFree(img_d);
-        cudaFree(img_tmp_d);
-        cudaFree(range_table_d);
-        exit(1);
-    }
+    // // img_out_f_h = new float[width * height * channel];
+    // cudaMalloc((void **)&img_out_f_d, height * width * channel * sizeof(float));
+    // if (!img_out_f_d)
+    // {
+    //     printf("Naive Kernel: Cuda malloc fail on img_out_f_d");
+    //     delete[] img_out_f_d;
+    //     delete[] img_tmp_h;
+    //     delete[] map_factor_a_h;
+    //     cudaFree(img_out_f_d);
+    //     cudaFree(img_d);
+    //     cudaFree(img_tmp_d);
+    //     cudaFree(range_table_d);
+    //     exit(1);
+    // }
 
-    float *map_factor_b_h;
-    float *map_factor_b_d;
-    map_factor_b_h = new float[width * height];
-    cudaMalloc((void **)&map_factor_b_d, height * width * sizeof(float));
-    if (!map_factor_b_d)
-    {
-        printf("Naive Kernel: Cuda malloc fail on map_factor_b_d");
-        delete[] map_factor_b_d;
-        delete[] img_out_f_d;
-        delete[] img_tmp_h;
-        delete[] map_factor_a_h;
-        cudaFree(range_table_d);
-        cudaFree(img_out_f_d);
-        cudaFree(img_d);
-        cudaFree(img_tmp_d);
-        cudaFree(range_table_d);
-        exit(1);
-    }
+    // float *map_factor_b_h;
+    // float *map_factor_b_d;
+    // map_factor_b_h = new float[width * height];
+    // cudaMalloc((void **)&map_factor_b_d, height * width * sizeof(float));
+    // if (!map_factor_b_d)
+    // {
+    //     printf("Naive Kernel: Cuda malloc fail on map_factor_b_d");
+    //     delete[] map_factor_b_d;
+    //     delete[] img_out_f_d;
+    //     delete[] img_tmp_h;
+    //     delete[] map_factor_a_h;
+    //     cudaFree(range_table_d);
+    //     cudaFree(img_out_f_d);
+    //     cudaFree(img_d);
+    //     cudaFree(img_tmp_d);
+    //     cudaFree(range_table_d);
+    //     exit(1);
+    // }
 
-    // memcpy(img_out_f, img_temp, sizeof(float) * width_channel);
-    cudaMemcpy(img_out_f_d, img_tmp_h, height * width * channels * sizeof(float), cudaMemcpyHostToDevice);
-    // memcpy(map_factor_b, in_factor, sizeof(float) * width);
-    cudaMemCpy(map_factor_b_d, map_factor_a_h, height * width * sizeof(float), cudaMemcpyHostToDevice);
+    // // memcpy(img_out_f, img_temp, sizeof(float) * width_channel);
+    // cudaMemcpy(img_out_f_d, img_tmp_h, height * width * channels * sizeof(float), cudaMemcpyHostToDevice);
+    // // memcpy(map_factor_b, in_factor, sizeof(float) * width);
+    // cudaMemCpy(map_factor_b_d, map_factor_a_h, height * width * sizeof(float), cudaMemcpyHostToDevice);
 
-    firstKernel<<<num_blocks, threads_per_block>>>(img_d, img_tmp_d, img_out_f_d, map_factor_a_d, map_factor_b_d,
-                                                   range_table_d, width, height, channel,
-                                                   sigma_spatial);
-    int h1 = height - 1;
-    float *line_factor_a_h = new float[width];
-    float *line_factor_b_h = new float[width];
+    // firstKernel<<<num_blocks, threads_per_block>>>(img_d, img_tmp_d, img_out_f_d, map_factor_a_d, map_factor_b_d,
+    //                                                range_table_d, width, height, channel,
+    //                                                sigma_spatial);
+    // int h1 = height - 1;
+    // float *line_factor_a_h = new float[width];
+    // float *line_factor_b_h = new float[width];
 
-    ycf = line_factor_a_h;
-    ypf = line_factor_b_h;
-    // memcpy(ypf, &in_factor[h1 * width], sizeof(float) * width);
-    cudaMemCpy(ypf, &map_factor_a_d[h1 * width], width * sizeof(float), cudaMemcpyDeviceToHost);
+    // ycf = line_factor_a_h;
+    // ypf = line_factor_b_h;
+    // // memcpy(ypf, &in_factor[h1 * width], sizeof(float) * width);
+    // cudaMemCpy(ypf, &map_factor_a_d[h1 * width], width * sizeof(float), cudaMemcpyDeviceToHost);
 
-    cudaMemCpy(map_factor_b_h, map_factor_b_d, width * height * sizeof(float), cudaMemcpyDeviceToHost);
+    // cudaMemCpy(map_factor_b_h, map_factor_b_d, width * height * sizeof(float), cudaMemcpyDeviceToHost);
 
-    for (int x = 0; x < width; x++)
-        map_factor_b_h[h1 * width + x] = 0.5f * (map_factor_b_h[h1 * width + x] + ypf[x]);
+    // for (int x = 0; x < width; x++)
+    //     map_factor_b_h[h1 * width + x] = 0.5f * (map_factor_b_h[h1 * width + x] + ypf[x]);
 
-    float *slice_factor_a_h = new float[width * channels];
-    float *slice_factor_b_h = new float[width * channels];
-    float *ycy = slice_factor_a_h;
-    float *ypy = slice_factor_b_h;
+    // float *slice_factor_a_h = new float[width * channels];
+    // float *slice_factor_b_h = new float[width * channels];
+    // float *ycy = slice_factor_a_h;
+    // float *ypy = slice_factor_b_h;
 
-    memcpy(ypy, &img_tmp_h[h1 * width * channels], sizeof(float) * width * channels);
+    // memcpy(ypy, &img_tmp_h[h1 * width * channels], sizeof(float) * width * channels);
 }
 
-___global___ void naiveKernel(
+void invokeRefactorKernel{
+    // local var
+    invokePrelim
+        invokeFirst
+            invokeSecond}
+
+___global___ void
+naiveKernel(
     unsigned char *img, float *img_temp, float *map_factor_a,
     float *range_table, int width, int height, int channel,
     float sigma_spatial)
